@@ -1,0 +1,162 @@
+---
+import Base from '../../layouts/Base.astro';
+import Register from '../../components/Register.astro';
+import Timeline from '../../components/Timeline.astro';
+import { getEssays } from '../../lib/content';
+import { STYLES } from '../../content.config';
+import { sheets } from '../../site.config';
+
+const essays = await getEssays();
+const counts = Object.fromEntries(STYLES.map((s) => [s, essays.filter((e) => e.data.style === s).length]));
+const styles = STYLES.filter((s) => counts[s] > 0);
+---
+<Base title="Essays" current="essays" sheet={sheets.essays} description="Essays on architecture: Gothic cathedrals, Mughal screens, Modernist villas, Brutalist estates and the vernacular buildings of South Asia.">
+  <header class="page-head wrap">
+    <h1 class="display">Essays</h1>
+    <p class="lede">
+      Buildings I have visited, studied, drawn or argued with. {essays.length} so far, filed like sheets in a drawing set, newest first.
+    </p>
+  </header>
+
+  <section class="wrap timeline-block" aria-labelledby="tl-title">
+    <h2 id="tl-title" class="visually-hidden">Timeline of the buildings</h2>
+    <Timeline essays={essays} />
+  </section>
+
+  <section class="wrap register-block" aria-labelledby="reg-title">
+    <div class="reg-bar">
+      <h2 id="reg-title" class="reg-h">Register</h2>
+      <div class="filters" role="group" aria-label="Filter essays by style" data-filters hidden>
+        <button type="button" aria-pressed="true" data-filter="all">All <span class="c">{essays.length}</span></button>
+        {
+          styles.map((s) => (
+            <button type="button" aria-pressed="false" data-filter={s}>
+              {s} <span class="c">{counts[s]}</span>
+            </button>
+          ))
+        }
+      </div>
+    </div>
+    <p class="visually-hidden" aria-live="polite" data-status></p>
+    <Register essays={essays} filterable />
+  </section>
+</Base>
+
+<script>
+  const bar = document.querySelector<HTMLElement>('[data-filters]');
+  const status = document.querySelector<HTMLElement>('[data-status]');
+  if (bar) {
+    bar.hidden = false;
+    const buttons = [...bar.querySelectorAll<HTMLButtonElement>('button')];
+    const rows = [...document.querySelectorAll<HTMLElement>('.reg-row')];
+    const marks = [...document.querySelectorAll<HTMLElement>('.t-item')];
+    const empty = document.querySelector<HTMLElement>('[data-empty]');
+    const apply = (style: string, push = true) => {
+      buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.filter === style)));
+      let shown = 0;
+      rows.forEach((r) => {
+        const on = style === 'all' || r.dataset.style === style;
+        r.hidden = !on;
+        if (on) shown++;
+      });
+      marks.forEach((m) => m.classList.toggle('dim', style !== 'all' && m.dataset.style !== style));
+      if (empty) empty.hidden = shown > 0;
+      if (status) status.textContent = style === 'all' ? `Showing all ${shown} essays` : `Showing ${shown} ${style} ${shown === 1 ? 'essay' : 'essays'}`;
+      if (push) {
+        const url = new URL(location.href);
+        if (style === 'all') url.searchParams.delete('style');
+        else url.searchParams.set('style', style);
+        history.replaceState(null, '', url);
+      }
+    };
+    buttons.forEach((b) => b.addEventListener('click', () => apply(b.dataset.filter || 'all')));
+    const initial = new URL(location.href).searchParams.get('style');
+    if (initial && buttons.some((b) => b.dataset.filter === initial)) apply(initial, false);
+  }
+</script>
+
+<style>
+  .page-head {
+    display: grid;
+    gap: 1.25rem;
+    padding-top: clamp(2.5rem, 7vw, 6rem);
+  }
+  .page-head h1 {
+    font-size: clamp(3.4rem, 1.6rem + 8.4vw, 6rem);
+    line-height: 0.85;
+    text-transform: uppercase;
+  }
+  @media (min-width: 1000px) {
+    .page-head {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      column-gap: clamp(1rem, 2vw, 2rem);
+      align-items: end;
+    }
+    .page-head h1 {
+      grid-column: 1 / 8;
+    }
+    .page-head .lede {
+      grid-column: 8 / 13;
+      padding-bottom: 0.4rem;
+    }
+  }
+  .timeline-block {
+    margin-top: clamp(2rem, 5vw, 4rem);
+  }
+  .register-block {
+    margin-top: clamp(2.5rem, 5vw, 4rem);
+  }
+  .reg-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem 2rem;
+    margin-bottom: 1.5rem;
+  }
+  .reg-h {
+    font-size: var(--step-2);
+    font-stretch: 115%;
+  }
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .filters[hidden] {
+    display: none;
+  }
+  .filters button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0.5rem 0.95rem;
+    border: 1px solid var(--line-soft);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-2);
+    font: inherit;
+    font-size: 0.92rem;
+    font-weight: 560;
+    cursor: pointer;
+    transition:
+      background-color 0.2s var(--ease-out),
+      color 0.2s var(--ease-out),
+      border-color 0.2s var(--ease-out);
+  }
+  .filters button:hover {
+    border-color: var(--line);
+    color: var(--text);
+  }
+  .filters button[aria-pressed='true'] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+  }
+  .filters .c {
+    font-family: var(--font-tech);
+    font-size: 0.7rem;
+    opacity: 0.8;
+  }
+</style>

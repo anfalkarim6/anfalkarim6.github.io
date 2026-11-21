@@ -1,0 +1,87 @@
+---
+/* The sheet border every drawing carries: trim line, zone band with grid references. Decorative. */
+const cols = ['1', '2', '3', '4', '5', '6', '7', '8'];
+const rows = ['A', 'B', 'C', 'D', 'E', 'F'];
+---
+<div class="frame" aria-hidden="true">
+  <div class="zones zones-top">{cols.map((c) => <span>{c}</span>)}</div>
+  <div class="zones zones-bottom">{cols.map((c) => <span>{c}</span>)}</div>
+  <div class="zones zones-left">{rows.map((r) => <span>{r}</span>)}</div>
+  <div class="zones zones-right">{rows.map((r) => <span>{r}</span>)}</div>
+</div>
+
+<style>
+  .frame {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-frame);
+    pointer-events: none;
+    border: var(--trim) solid var(--bg);
+    view-transition-name: sheet-frame;
+  }
+  /* inner border line of the sheet */
+  .frame::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 1px solid var(--line-soft);
+    box-shadow: 0 0 0 var(--band) var(--bg) inset;
+  }
+  .frame::after {
+    content: '';
+    position: absolute;
+    inset: var(--band);
+    border: 1px solid var(--line-soft);
+  }
+  .zones {
+    display: none;
+  }
+  @media (min-width: 760px) {
+    .zones {
+      position: absolute;
+      display: flex;
+      font-family: var(--font-tech);
+      font-size: 9.5px;
+      line-height: 1;
+      color: var(--text-3);
+    }
+    .zones span {
+      flex: 1;
+      display: grid;
+      place-items: center;
+    }
+    .zones-top,
+    .zones-bottom {
+      left: var(--band);
+      right: var(--band);
+      height: var(--band);
+    }
+    .zones-top {
+      top: 0;
+    }
+    .zones-bottom {
+      bottom: 0;
+    }
+    .zones-left,
+    .zones-right {
+      top: var(--band);
+      bottom: var(--band);
+      width: var(--band);
+      flex-direction: column;
+    }
+    .zones-left {
+      left: 0;
+    }
+    .zones-right {
+      right: 0;
+    }
+    .zones-top span + span,
+    .zones-bottom span + span {
+      border-left: 1px solid var(--line-faint);
+    }
+    .zones-left span + span,
+    .zones-right span + span {
+      border-top: 1px solid var(--line-faint);
+    }
+  }
+</style>

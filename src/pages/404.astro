@@ -1,0 +1,47 @@
+---
+import Base from '../layouts/Base.astro';
+---
+<Base title="Sheet not found" sheet={{ no: 'A-404', name: 'Missing sheet' }}>
+  <section class="nf wrap">
+    <svg class="drawing nf-mark" viewBox="0 0 400 160" aria-hidden="true">
+      <path class="ln" d="M0 80 H150 L165 40 L185 120 L200 80 L215 40 L235 120 L250 80 H400"></path>
+      <path class="ln thin" d="M0 70 V90 M400 70 V90"></path>
+    </svg>
+    <h1 class="display">This sheet is missing from the set.</h1>
+    <p class="lede">The link may be old, or the drawing was never issued. The register lists every essay that has been.</p>
+    <p class="actions">
+      <a class="button" href="/essays/">
+        Open the register
+        <svg viewBox="0 0 26 14" aria-hidden="true"><path d="M0 7h24M18 1l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.6"></path></svg>
+      </a>
+      <a class="link-arrow" href="/">Back to the cover sheet</a>
+    </p>
+  </section>
+</Base>
+
+<style>
+  .nf {
+    padding-top: clamp(3rem, 10vw, 8rem);
+    max-width: 60rem;
+    margin-inline: auto;
+  }
+  .nf-mark {
+    width: min(100%, 26rem);
+    height: auto;
+    margin-bottom: 2rem;
+  }
+  h1 {
+    font-size: var(--step-4);
+    line-height: 0.95;
+  }
+  .lede {
+    margin-top: 1.25rem;
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem 2rem;
+    margin-top: 2rem;
+  }
+</style>

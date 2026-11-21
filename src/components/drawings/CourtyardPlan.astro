@@ -1,0 +1,166 @@
+---
+/* Ground floor plan, Courtyard House for a Hot Summer, Multan. 1 unit = 2 cm. */
+interface Props {
+  mode?: 'live' | 'scroll' | 'static';
+  class?: string;
+}
+const { mode = 'static', class: cls } = Astro.props;
+const modeClass = mode === 'live' ? 'is-live' : mode === 'scroll' ? 'on-scroll' : '';
+
+// walls as rects [x, y, w, h]
+const outer: number[][] = [
+  [180, 120, 640, 20],
+  [180, 620, 250, 20],
+  [500, 620, 320, 20],
+  [180, 140, 20, 480],
+  [800, 140, 20, 160],
+  [800, 380, 20, 240],
+];
+const inner: number[][] = [
+  [200, 260, 160, 10],
+  [200, 490, 160, 10],
+  [640, 260, 160, 10],
+  [640, 490, 160, 10],
+  [358, 140, 12, 80],
+  [630, 140, 12, 80],
+  [360, 488, 110, 12],
+  [530, 488, 110, 12],
+  [360, 330, 12, 158],
+  [628, 272, 12, 70],
+  [628, 402, 12, 98],
+  [430, 500, 10, 120],
+  [500, 500, 10, 80],
+];
+const dalaanCols = [384, 444, 504, 564, 616].map((x) => [x, 256, 14, 14]);
+const paving = [
+  ...[400, 440, 480, 520, 560, 600].map((x) => `M${x} 272 V488`),
+  ...[312, 352, 392, 432, 472].map((y) => `M372 ${y} H628`),
+].join(' ');
+const rooms: [number, number, string][] = [
+  [282, 214, 'BAITHAK'],
+  [722, 226, 'KITCHEN'],
+  [300, 440, 'BED 1'],
+  [684, 450, 'BED 2'],
+  [280, 560, 'STORE'],
+  [500, 214, 'DALAAN'],
+];
+const stairTreads = Array.from({ length: 9 }, (_, i) => `M${590 + i * 22} 520 V600`).join(' ');
+const scale = [0, 1, 2, 3, 4, 5];
+---
+<svg
+  class:list={['drawing', modeClass, cls]}
+  viewBox="60 40 900 680"
+  role="img"
+  aria-label="Ground floor plan of a courtyard house: rooms wrap a paved courtyard with a neem tree and a shallow pool; a shaded verandah faces the courtyard from the north, a bent entrance passage leads in from the street, and a wind catcher sits above the bedroom."
+>
+  <!-- grid -->
+  <g class="fade" style="--d:0s">
+    {
+      [
+        [190, '1'],
+        [500, '2'],
+        [810, '3'],
+      ].map(([x, l]) => (
+        <>
+          <line class="ln axis" x1={x} y1="96" x2={x} y2="690" />
+          <circle class="ln" cx={x} cy="74" r="20" />
+          <text class="bubble-txt" x={x} y="75" style="font-size:17px">{l}</text>
+        </>
+      ))
+    }
+    {
+      [
+        [130, 'A'],
+        [380, 'B'],
+        [630, 'C'],
+      ].map(([y, l]) => (
+        <>
+          <line class="ln axis" x1="110" y1={y} x2="880" y2={y} />
+          <circle class="ln" cx="88" cy={y} r="20" />
+          <text class="bubble-txt" x="88" y={Number(y) + 1} style="font-size:17px">{l}</text>
+        </>
+      ))
+    }
+  </g>
+
+  <!-- walls (cut) -->
+  <g class="poche fade" style="--d:0.2s">
+    {outer.map(([x, y, w, h]) => <rect x={x} y={y} width={w} height={h} />)}
+  </g>
+  <g class="poche fade" style="--d:0.45s">
+    {inner.map(([x, y, w, h]) => <rect x={x} y={y} width={w} height={h} />)}
+    {dalaanCols.map(([x, y, w, h]) => <rect x={x} y={y} width={w} height={h} />)}
+  </g>
+
+  <!-- window in the east wall, door swings -->
+  <path class="ln thin draw" pathLength="1" d="M806 300 V380 M814 300 V380" style="--d:0.7s" />
+  <path class="ln thin draw" pathLength="1" d="M470 488 A60 60 0 0 1 530 548 M470 488 V548" style="--d:0.8s" />
+  <path class="ln thin draw" pathLength="1" d="M372 330 A58 58 0 0 0 314 272" style="--d:0.85s" />
+
+  <!-- courtyard: paving, pool, neem tree -->
+  <path class="ln thin draw" pathLength="1" d={paving} style="--d:0.9s;--dur:1.6s" opacity="0.55" />
+  <rect class="ln draw" pathLength="1" x="452" y="402" width="96" height="56" style="--d:1.1s" />
+  <rect class="ln thin draw" pathLength="1" x="460" y="410" width="80" height="40" style="--d:1.2s" />
+  <circle class="ln draw" pathLength="1" cx="430" cy="335" r="46" style="--d:1.25s;--dur:1.2s" stroke-dasharray="3 4" />
+  <circle class="ln" cx="430" cy="335" r="4" />
+
+  <!-- jaali screen at the end of the entrance passage -->
+  <g class="fade" style="--d:1.3s">
+    {Array.from({ length: 6 }, (_, i) => <rect class="ln thin" x={444 + i * 9} y="503" width="5" height="5" />)}
+  </g>
+
+  <!-- stair -->
+  <path class="ln thin draw" pathLength="1" d={`${stairTreads} M590 560 H788`} style="--d:1.35s" />
+  <path class="ln draw" pathLength="1" d="M600 560 H770 M760 552 L772 560 L760 568" style="--d:1.5s" />
+
+  <!-- furniture: charpai beds, kitchen counter, seating -->
+  <g style="--d:1.45s">
+    <rect class="ln thin draw" pathLength="1" x="216" y="300" width="56" height="110" />
+    <path class="ln thin draw" pathLength="1" d="M216 318 H272 M216 392 H272" />
+    <rect class="ln thin draw" pathLength="1" x="728" y="372" width="56" height="104" />
+    <path class="ln thin draw" pathLength="1" d="M652 176 H800 M700 140 V176" />
+    <path class="ln thin draw" pathLength="1" d="M216 156 V244 M216 156 H340 M216 244 H300" />
+  </g>
+
+  <!-- wind catcher (mangh) above, shown dashed -->
+  <g class="fade" style="--d:1.6s">
+    <rect class="ln hidden-ln" x="656" y="284" width="96" height="64" />
+    <path class="ln hidden-ln" d="M656 284 L752 348 M752 284 L656 348" />
+    <text class="label" x="704" y="366" text-anchor="middle" style="font-size:11px">MANGH ABOVE</text>
+  </g>
+
+  <!-- room names -->
+  <g class="fade" style="--d:1.7s">
+    {rooms.map(([x, y, t]) => <text class="label" x={x} y={y} text-anchor="middle" style="font-size:12px">{t}</text>)}
+    <text class="label" x="500" y="476" text-anchor="middle" style="font-size:12px">SEHN</text>
+    <text class="label" x="465" y="600" text-anchor="middle" style="font-size:11px" transform="rotate(-90 465 600)">DEHLEEZ</text>
+  </g>
+
+  <!-- section cut B–B -->
+  <g class="fade" style="--d:1.8s">
+    <path class="ln" d="M150 380 H176 M824 380 H850" stroke-width="2.4" />
+    <path class="ln poche-arrow" d="M150 380 V356 L138 368 Z M850 380 V356 L862 368 Z" />
+    <text class="bubble-txt" x="140" y="404" style="font-size:16px">B</text>
+    <text class="bubble-txt" x="860" y="404" style="font-size:16px">B</text>
+  </g>
+
+  <!-- north point -->
+  <g class="fade" style="--d:1.9s">
+    <circle class="ln" cx="905" cy="140" r="24" />
+    <path class="ln" d="M905 112 L915 152 L905 144 L895 152 Z" />
+    <text class="label" x="905" y="100" text-anchor="middle">N</text>
+  </g>
+
+  <!-- scale bar, metres -->
+  <g class="fade" style="--d:2s">
+    {scale.slice(0, -1).map((m) => <rect x={180 + m * 50} y="676" width="50" height="7" class={m % 2 ? 'ln thin' : 'poche'} />)}
+    {[0, 1, 5].map((m) => <text class="label" x={180 + m * 50} y="704" text-anchor="middle" style="font-size:11px">{m}</text>)}
+    <text class="label" x="450" y="684" style="font-size:11px">M</text>
+  </g>
+</svg>
+
+<style>
+  .poche-arrow {
+    fill: currentColor;
+  }
+</style>

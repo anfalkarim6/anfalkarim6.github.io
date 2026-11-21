@@ -1,0 +1,111 @@
+---
+/*
+  Isometric drawing of the Pavilion of Shade: a bamboo frame with a slatted roof
+  whose shadow falls as stripes on the brick platform. Geometry is computed, in metres.
+*/
+interface Props {
+  mode?: 'live' | 'scroll' | 'static';
+  class?: string;
+}
+const { mode = 'static', class: cls } = Astro.props;
+const modeClass = mode === 'live' ? 'is-live' : mode === 'scroll' ? 'on-scroll' : '';
+
+const S = 62; // px per metre
+const C = Math.cos(Math.PI / 6);
+const OX = 330;
+const OY = 210;
+const iso = (x: number, y: number, z: number): [number, number] => [OX + (x - y) * C * S, OY + (x + y) * 0.5 * S - z * S];
+const pt = (p: [number, number]) => `${p[0].toFixed(1)} ${p[1].toFixed(1)}`;
+const seg = (a: number[], b: number[]) => `M${pt(iso(a[0], a[1], a[2]))} L${pt(iso(b[0], b[1], b[2]))}`;
+
+const H = 3; // column height
+const X = 6; // length
+const Y = 4; // depth
+
+// platform
+const p0 = -0.8, p1x = X + 0.8, p1y = Y + 0.8, pz = -0.35;
+const platform = [
+  seg([p0, p0, 0], [p1x, p0, 0]),
+  seg([p1x, p0, 0], [p1x, p1y, 0]),
+  seg([p1x, p1y, 0], [p0, p1y, 0]),
+  seg([p0, p1y, 0], [p0, p0, 0]),
+  seg([p1x, p0, 0], [p1x, p0, pz]),
+  seg([p1x, p0, pz], [p1x, p1y, pz]),
+  seg([p1x, p1y, pz], [p0, p1y, pz]),
+  seg([p0, p1y, pz], [p0, p1y, 0]),
+  seg([p1x, p1y, 0], [p1x, p1y, pz]),
+].join(' ');
+
+// brick coursing on the platform (thin)
+const bricks = Array.from({ length: 12 }, (_, i) => p0 + (i + 1) * ((p1y - p0) / 13))
+  .map((y) => seg([p0, y, 0], [p1x, y, 0]))
+  .join(' ');
+
+// columns on a 3 × 2 grid
+const cols: string[] = [];
+for (const x of [0, X / 2, X]) for (const y of [0, Y]) cols.push(seg([x, y, 0], [x, y, H]));
+
+// beams
+const beams = [seg([0, 0, H], [X, 0, H]), seg([0, Y, H], [X, Y, H]), ...[0, X / 2, X].map((x) => seg([x, 0, H], [x, Y, H]))].join(' ');
+
+// roof slats across the beams, every 0.25 m, overhanging
+const slatYs = Array.from({ length: 21 }, (_, i) => -0.5 + i * 0.25);
+const slats = slatYs.map((y) => seg([-0.6, y, H + 0.12], [X + 0.6, y, H + 0.12]));
+
+// shadow of slats on the platform, sun from the north-west (offset in plan)
+const SX = 1.1, SY = 0.9;
+const shadows = slatYs
+  .map((y) => y + SY)
+  .filter((y) => y > p0 && y < p1y)
+  .map((y) => seg([Math.max(p0, -0.6 + SX), y, 0], [Math.min(p1x, X + 0.6 + SX), y, 0]))
+  .join(' ');
+
+// bench along the back
+const bench = [
+  seg([0.6, Y - 0.6, 0.45], [X - 0.6, Y - 0.6, 0.45]),
+  seg([0.6, Y - 0.2, 0.45], [X - 0.6, Y - 0.2, 0.45]),
+  seg([0.6, Y - 0.6, 0.45], [0.6, Y - 0.6, 0]),
+  seg([X - 0.6, Y - 0.6, 0.45], [X - 0.6, Y - 0.6, 0]),
+].join(' ');
+
+// a person for scale
+const [fx, fy] = iso(2.2, 1.4, 0);
+const person = `M${fx - 7} ${fy - 62} L${fx + 7} ${fy - 62} L${fx + 8} ${fy - 30} L${fx + 4} ${fy} M${fx - 8} ${fy - 30} L${fx - 7} ${fy - 62} M${fx - 4} ${fy} L${fx - 8} ${fy - 30} L${fx + 8} ${fy - 30}`;
+
+const minX = iso(p0, p1y, 0)[0] - 20;
+const maxX = iso(p1x, p0, 0)[0] + 200;
+const minY = iso(-0.6, -0.5, H + 0.12)[1] - 30;
+const maxY = iso(p1x, p1y, pz)[1] + 70;
+---
+<svg
+  class:list={['drawing', modeClass, cls]}
+  viewBox={`${minX.toFixed(0)} ${minY.toFixed(0)} ${(maxX - minX).toFixed(0)} ${(maxY - minY).toFixed(0)}`}
+  role="img"
+  aria-label="Isometric drawing of a small pavilion: six bamboo columns carry a roof of closely spaced slats, whose striped shadow falls across a raised brick platform with a long bench."
+>
+  <path class="ln draw" pathLength="1" d={platform} style="--d:0.1s;--dur:1.4s" />
+  <path class="ln thin draw" pathLength="1" d={bricks} style="--d:0.6s;--dur:1.4s" opacity="0.5" />
+  <path class="ln draw shadow" pathLength="1" d={shadows} style="--d:2.1s;--dur:1.4s" />
+  <path class="ln draw" pathLength="1" d={bench} style="--d:1s" />
+  <path class="ln cut draw" pathLength="1" d={cols.join(' ')} style="--d:0.8s;--dur:1.2s" />
+  <path class="ln draw" pathLength="1" d={beams} style="--d:1.2s;--dur:1.2s" />
+  <g>
+    {slats.map((d, i) => <path class="ln thin draw" pathLength="1" d={d} style={`--d:${(1.5 + i * 0.04).toFixed(2)}s;--dur:0.8s`} />)}
+  </g>
+  <g style="--d:1.9s">
+    <path class="ln draw" pathLength="1" d={person} />
+    <circle class="ln draw" pathLength="1" cx={fx} cy={fy - 72} r="7" />
+  </g>
+  <g class="fade" style="--d:2.4s">
+    <text class="label" x={iso(X + 0.6, -0.5, H + 0.12)[0] + 14} y={iso(X + 0.6, -0.5, H + 0.12)[1]}>BAMBOO SLATS @ 250</text>
+    <text class="label" x={iso(p1x, p1y, pz)[0] - 10} y={iso(p1x, p1y, pz)[1] + 34} text-anchor="middle">BRICK PLINTH</text>
+  </g>
+</svg>
+
+<style>
+  .shadow {
+    stroke: var(--accent);
+    stroke-width: 2.4;
+    opacity: 0.6;
+  }
+</style>

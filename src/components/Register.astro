@@ -1,0 +1,222 @@
+---
+/*
+  The drawing register: an architect's index of sheets, used as the list of essays.
+  Pointer devices get a cyanotype preview of the building that follows the cursor.
+*/
+import type { Essay } from '../lib/content';
+import { unsplash } from '../lib/content';
+
+interface Props {
+  essays: Essay[];
+  filterable?: boolean;
+}
+const { essays, filterable = false } = Astro.props;
+---
+<div class="register" data-register>
+  <div class="reg-head tech" aria-hidden="true">
+    <span>Sheet</span>
+    <span>Title</span>
+    <span>Style</span>
+    <span>Building</span>
+    <span class="t-right">Read</span>
+  </div>
+  <ol class="reg-list" role="list">
+    {
+      essays.map((e) => (
+        <li class="reg-row" data-style={e.data.style} data-preview={unsplash(e.data.cover.id, 560, 400)}>
+          <a class="reg-link" href={`/essays/${e.id}/`}>
+            <span class="reg-sheet tech">{e.sheet}</span>
+            <span class="reg-title">{e.data.title}</span>
+            <span class="reg-style">{e.data.style}</span>
+            <span class="reg-place">
+              {e.data.building.city}, {e.data.building.yearLabel}
+            </span>
+            <span class="reg-time tech">{e.minutes} min</span>
+          </a>
+        </li>
+      ))
+    }
+  </ol>
+  {filterable && <p class="reg-empty" hidden data-empty>No essays filed under this style yet.</p>}
+  <div class="reg-preview" aria-hidden="true" data-preview-box>
+    {essays[0] && <img src={unsplash(essays[0].data.cover.id, 560, 400)} alt="" width="280" height="200" loading="lazy" decoding="async" />}
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-register]').forEach((reg) => {
+    const fine = matchMedia('(hover: hover) and (pointer: fine)').matches;
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const preview = reg.querySelector<HTMLElement>('[data-preview-box]');
+    const img = preview?.querySelector('img');
+    if (!fine || !preview || !img) return;
+    // warm the cache so the preview never flashes empty
+    reg.querySelectorAll<HTMLElement>('.reg-row').forEach((row) => {
+      const src = row.dataset.preview;
+      if (src) new Image().src = src;
+    });
+    let x = 0, y = 0, tx = 0, ty = 0, raf = 0;
+    const loop = () => {
+      x += (tx - x) * (reduce ? 1 : 0.2);
+      y += (ty - y) * (reduce ? 1 : 0.2);
+      preview.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+      raf = Math.abs(tx - x) + Math.abs(ty - y) > 0.5 ? requestAnimationFrame(loop) : 0;
+    };
+    reg.addEventListener('pointermove', (e) => {
+      tx = e.clientX + 28;
+      ty = e.clientY - 100;
+      if (tx + 300 > innerWidth) tx = e.clientX - 308;
+      if (!preview.classList.contains('show')) {
+        x = tx;
+        y = ty;
+      }
+      if (!raf) raf = requestAnimationFrame(loop);
+    });
+    reg.querySelectorAll<HTMLElement>('.reg-row').forEach((row) => {
+      row.addEventListener('pointerenter', () => {
+        if (row.dataset.preview) img.src = row.dataset.preview;
+        preview.classList.add('show');
+      });
+      row.addEventListener('pointerleave', () => preview.classList.remove('show'));
+    });
+  });
+</script>
+
+<style>
+  .register {
+    position: relative;
+  }
+  .reg-head {
+    display: none;
+  }
+  .reg-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--line-soft);
+  }
+  .reg-row {
+    border-bottom: 1px solid var(--line-faint);
+  }
+  .reg-row[hidden] {
+    display: none;
+  }
+  .reg-link {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+      'sheet style time'
+      'title title title'
+      'place place place';
+    gap: 0.35rem 1rem;
+    padding: 1.1rem 0.25rem 1.2rem;
+    text-decoration: none;
+    transition: background-color 0.25s var(--ease-out);
+  }
+  .reg-sheet {
+    grid-area: sheet;
+    color: var(--accent);
+  }
+  .reg-title {
+    grid-area: title;
+    font-size: var(--step-1);
+    font-weight: 680;
+    font-stretch: 108%;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .reg-style {
+    grid-area: style;
+    color: var(--text-2);
+    font-size: var(--step--1);
+  }
+  .reg-place {
+    grid-area: place;
+    color: var(--text-2);
+    font-size: var(--step--1);
+  }
+  .reg-time {
+    grid-area: time;
+    color: var(--text-3);
+    text-align: right;
+  }
+  .reg-link:hover {
+    background: var(--bg-hover);
+  }
+  .reg-link:hover .reg-title {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.18em;
+  }
+
+  @media (min-width: 860px) {
+    .reg-head,
+    .reg-link {
+      display: grid;
+      grid-template-columns: 5.5rem minmax(0, 1fr) 8.5rem 12.5rem 4.5rem;
+      grid-template-areas: 'sheet title style place time';
+      column-gap: 1.5rem;
+      align-items: baseline;
+    }
+    .reg-head {
+      padding: 0 0.75rem 0.6rem;
+      color: var(--text-3);
+    }
+    .t-right {
+      text-align: right;
+    }
+    .reg-link {
+      padding: 1.15rem 0.75rem;
+    }
+    .reg-title {
+      font-size: var(--step-1);
+    }
+  }
+
+  .reg-empty {
+    padding: 2rem 0.25rem;
+    color: var(--text-2);
+  }
+
+  .reg-preview {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: var(--z-preview);
+    width: 280px;
+    aspect-ratio: 7 / 5;
+    pointer-events: none;
+    overflow: hidden;
+    background: var(--cy-800);
+    border: 1px solid oklch(0.975 0.01 235 / 0.5);
+    opacity: 0;
+    clip-path: inset(0 0 100% 0);
+    transition:
+      opacity 0.25s var(--ease-out),
+      clip-path 0.5s var(--ease-expo);
+  }
+  .reg-preview::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: oklch(0.36 0.12 243);
+    mix-blend-mode: screen;
+  }
+  .reg-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: grayscale(1) contrast(1.28) brightness(0.92);
+  }
+  .reg-preview:global(.show) {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reg-preview {
+      transition: opacity 0.15s linear;
+      clip-path: none;
+    }
+  }
+</style>

@@ -1,0 +1,210 @@
+---
+/* Footer as a drawing title block. The revision table is real: it lists the latest essays. */
+import { site } from '../site.config';
+import { getEssays, sheetDate } from '../lib/content';
+
+interface Props {
+  sheet: { no: string; name: string };
+}
+const { sheet } = Astro.props;
+const essays = await getEssays();
+const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const revisions = essays.slice(0, 3).map((e, i) => ({
+  rev: letters[essays.length - 1 - i] ?? '·',
+  date: sheetDate(e.data.published),
+  title: e.data.title,
+  href: `/essays/${e.id}/`,
+}));
+const year = new Date().getFullYear();
+---
+<footer class="title-block-wrap wrap" aria-labelledby="tb-title">
+  <div class="title-block">
+    <div class="cell cell-project">
+      <p class="k tech">Project</p>
+      <p id="tb-title" class="project-name display">{site.name}</p>
+      <p class="project-sub">{site.tagline}. {site.city}, {site.country}.</p>
+    </div>
+
+    <div class="cell cell-contact">
+      <p class="k tech">Contact</p>
+      <a class="email" href={`mailto:${site.email}`}>{site.email}</a>
+    </div>
+
+    <div class="cell cell-rev">
+      <p class="k tech">Revisions</p>
+      <table class="rev-table">
+        <thead class="visually-hidden">
+          <tr><th scope="col">Revision</th><th scope="col">Date</th><th scope="col">Description</th></tr>
+        </thead>
+        <tbody>
+          {
+            revisions.map((r) => (
+              <tr>
+                <td class="rev tech">{r.rev}</td>
+                <td class="date tech">{r.date}</td>
+                <td class="desc">
+                  <a href={r.href}>Issued essay: {r.title}</a>
+                </td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <dl class="cell cell-meta">
+      <div><dt class="tech">Drawn by</dt><dd>{site.firstName[0]}. {site.lastName}</dd></div>
+      <div><dt class="tech">Scale</dt><dd>As shown</dd></div>
+      <div class="sheet-title"><dt class="tech">Sheet title</dt><dd>{sheet.name}</dd></div>
+      <div class="sheet-no"><dt class="tech">Sheet no.</dt><dd class="display">{sheet.no}</dd></div>
+    </dl>
+  </div>
+  <p class="colophon tech">
+    © {year} {site.name} · Photographs credited where they appear · Set in Archivo, Literata &amp; Martian Mono
+  </p>
+</footer>
+
+<style>
+  .title-block-wrap {
+    margin-top: clamp(5rem, 10vw, 9rem);
+    padding-bottom: calc(var(--frame) + 1.5rem);
+  }
+  .title-block {
+    display: grid;
+    grid-template-columns: 1fr;
+    border: 1px solid var(--line-soft);
+    background: var(--bg);
+  }
+  .cell {
+    padding: 1.1rem 1.15rem 1.25rem;
+    border-bottom: 1px solid var(--line-soft);
+    margin: 0;
+  }
+  .cell:last-child {
+    border-bottom: 0;
+  }
+  .k {
+    margin-bottom: 0.65rem;
+    color: var(--text-3);
+  }
+  .project-name {
+    font-size: var(--step-3);
+    line-height: 0.95;
+  }
+  .project-sub {
+    margin-top: 0.75rem;
+    color: var(--text-2);
+    max-width: 34ch;
+  }
+  .email {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-size: var(--step-1);
+    font-weight: 620;
+    color: var(--link);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.25em;
+    overflow-wrap: anywhere;
+  }
+  .rev-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .rev-table td {
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--line-faint);
+    vertical-align: baseline;
+  }
+  .rev-table tr:first-child td {
+    border-top: 0;
+  }
+  .rev {
+    width: 2.25rem;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .date {
+    width: 5.75rem;
+    color: var(--text-3);
+  }
+  .desc a {
+    color: var(--text-2);
+    text-decoration: none;
+    font-size: 0.95rem;
+  }
+  .desc a:hover {
+    color: var(--text);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+  .cell-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 0;
+  }
+  .cell-meta > div {
+    padding: 0.85rem 1.15rem 1rem;
+    border-right: 1px solid var(--line-faint);
+    border-bottom: 1px solid var(--line-faint);
+  }
+  .cell-meta > div:nth-child(2n) {
+    border-right: 0;
+  }
+  .cell-meta dt {
+    color: var(--text-3);
+    margin-bottom: 0.3rem;
+  }
+  .cell-meta dd {
+    margin: 0;
+    font-weight: 560;
+  }
+  .cell-meta .sheet-no {
+    grid-column: 1 / -1;
+    border-bottom: 0;
+    border-right: 0;
+  }
+  .cell-meta .sheet-title {
+    grid-column: 1 / -1;
+    border-right: 0;
+  }
+  .sheet-no dd {
+    font-size: clamp(2.2rem, 1.6rem + 1.6vw, 3.2rem);
+    line-height: 0.9;
+    white-space: nowrap;
+  }
+  .colophon {
+    margin-top: 1rem;
+    color: var(--text-3);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  @media (min-width: 760px) {
+    .title-block {
+      grid-template-columns: 1.3fr 1fr;
+    }
+    .cell-project,
+    .cell-rev {
+      border-right: 1px solid var(--line-soft);
+    }
+    .cell-rev {
+      border-bottom: 0;
+    }
+  }
+  @media (min-width: 1180px) {
+    .title-block {
+      grid-template-columns: 1.25fr 1fr 1.35fr 0.95fr;
+    }
+    .cell {
+      border-bottom: 0;
+      border-right: 1px solid var(--line-soft);
+    }
+    .cell:last-child {
+      border-right: 0;
+    }
+    .cell-meta {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+</style>

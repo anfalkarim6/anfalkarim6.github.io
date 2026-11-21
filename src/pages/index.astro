@@ -1,0 +1,304 @@
+---
+import Base from '../layouts/Base.astro';
+import Hero from '../components/Hero.astro';
+import Register from '../components/Register.astro';
+import SectionHead from '../components/SectionHead.astro';
+import Cyanotype from '../components/Cyanotype.astro';
+import Drawing from '../components/drawings/Drawing.astro';
+import { getEssays, getProjects, formatDate } from '../lib/content';
+import { site, sheets } from '../site.config';
+
+const essays = await getEssays();
+const projects = await getProjects();
+const [latest] = essays;
+const heroProject = projects.find((p) => p.data.drawing === 'reading-room-section') ?? projects[0];
+// The hero already shows the reading-room section, so the pin-up leads with a different sheet.
+const pinned = [...projects.filter((p) => p !== heroProject), heroProject];
+const [lead, ...rest] = pinned;
+---
+<Base current="home" sheet={sheets.home}>
+  <Hero latestHref={`/essays/${latest.id}/`} projectHref={`/projects/${heroProject.id}/`} />
+
+  <!-- Latest essay -->
+  <section class="latest wrap" aria-labelledby="latest-title">
+    <a class="latest-card" href={`/essays/${latest.id}/`}>
+      <Cyanotype
+        id={latest.data.cover.id}
+        alt={latest.data.cover.alt}
+        ratio={4 / 3}
+        position={latest.data.cover.position}
+        sizes="(min-width: 1000px) 56vw, 100vw"
+        toggle={false}
+        class="latest-img"
+      />
+      <div class="latest-text">
+        <p class="latest-meta">
+          <span class="tech">Latest · {latest.sheet}</span>
+          <span>{formatDate(latest.data.published)} · {latest.minutes} min read</span>
+        </p>
+        <h2 id="latest-title" class="display">{latest.data.title}</h2>
+        <p class="latest-dek">{latest.data.dek}</p>
+        <p class="latest-building">
+          {latest.data.building.name.split(' (')[0]}, {latest.data.building.architect}, {latest.data.building.yearLabel}
+        </p>
+        <span class="link-arrow">
+          Read the essay
+          <svg viewBox="0 0 26 14" aria-hidden="true"><path d="M0 7h24M18 1l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.6"></path></svg>
+        </span>
+      </div>
+    </a>
+  </section>
+
+  <!-- Register of essays -->
+  <section class="block wrap" aria-labelledby="essays-title">
+    <SectionHead
+      id="essays-title"
+      title="Essays"
+      href="/essays/"
+      sheet="A-100"
+      count={essays.length}
+      countLabel="essays"
+      linkLabel="Full register"
+    />
+    <Register essays={essays.slice(1, 7)} />
+  </section>
+
+  <!-- Projects: pin-up wall -->
+  <section class="block wrap" aria-labelledby="projects-title">
+    <SectionHead
+      id="projects-title"
+      title="Projects"
+      href="/projects/"
+      sheet="A-200"
+      count={projects.length}
+      countLabel="projects"
+      linkLabel="All projects"
+    />
+    <div class="pinup">
+      <a class="pin pin-lead" href={`/projects/${lead.id}/`}>
+        <Drawing name={lead.data.drawing} mode="scroll" />
+        <div class="pin-text">
+          <p class="tech pin-meta">{lead.sheet} · {lead.data.kind}, {lead.data.year}</p>
+          <h3>{lead.data.title}</h3>
+          <p class="pin-sum">{lead.data.summary}</p>
+        </div>
+      </a>
+      {
+        rest.map((p) => (
+          <a class="pin" href={`/projects/${p.id}/`}>
+            <Drawing name={p.data.drawing} mode="scroll" />
+            <div class="pin-text">
+              <p class="tech pin-meta">
+                {p.sheet} · {p.data.kind}, {p.data.year}
+              </p>
+              <h3>{p.data.title}</h3>
+              <p class="pin-sum">{p.data.summary}</p>
+            </div>
+          </a>
+        ))
+      }
+    </div>
+  </section>
+
+  <!-- About -->
+  <section class="about-strip wrap" aria-labelledby="about-title">
+    <div class="about-grid">
+      <h2 id="about-title" class="about-quote">
+        I grew up in Quetta, where summer sends you looking for shade and winter sends you looking for sun. Both taught me that architecture is mostly about where the light falls.
+      </h2>
+      <div class="about-side">
+        <Cyanotype
+          id="photo-1503387837-b154d5074bd2"
+          alt="Hands drafting on a large sheet of blueprint paper with a pencil and scale ruler."
+          ratio={4 / 3}
+          sizes="(min-width: 1000px) 30vw, 100vw"
+          toggle={false}
+          credit="Daniel McCullough"
+          creditUrl="https://unsplash.com/photos/-FPFq_trr2Y"
+        />
+        <p class="about-blurb">
+          {site.name} is a student in {site.city}. {site.status}.
+        </p>
+        <a class="link-arrow" href="/about/">
+          About {site.firstName}
+          <svg viewBox="0 0 26 14" aria-hidden="true"><path d="M0 7h24M18 1l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.6"></path></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .block {
+    margin-top: clamp(5rem, 11vw, 9rem);
+  }
+
+  /* --- latest essay --- */
+  .latest {
+    margin-top: clamp(1rem, 3vw, 2rem);
+  }
+  .latest-card {
+    display: grid;
+    gap: 1.5rem;
+    color: inherit;
+    text-decoration: none;
+  }
+  .latest-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1.25rem;
+    align-items: baseline;
+    color: var(--text-2);
+    font-size: var(--step--1);
+  }
+  .latest-meta .tech {
+    color: var(--accent);
+  }
+  .latest h2 {
+    margin-top: 1rem;
+    font-size: var(--step-4);
+    line-height: 0.95;
+  }
+  .latest-dek {
+    margin-top: 1.25rem;
+    max-width: 40ch;
+    font-size: var(--step-1);
+    line-height: 1.45;
+    color: var(--text-2);
+  }
+  .latest-building {
+    margin-top: 1rem;
+    color: var(--text-3);
+    font-size: var(--step--1);
+  }
+  .latest-text .link-arrow {
+    margin-top: 1rem;
+  }
+  .latest-card:hover h2 {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.12em;
+  }
+  @media (min-width: 1000px) {
+    .latest-card {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      column-gap: clamp(1rem, 2vw, 2rem);
+      align-items: end;
+    }
+    .latest-card > :global(.latest-img) {
+      grid-column: 1 / 8;
+    }
+    .latest-text {
+      grid-column: 8 / 13;
+      padding-bottom: 0.5rem;
+    }
+  }
+
+  /* --- pin-up wall: one big sheet, two smaller --- */
+  .pinup {
+    display: grid;
+    gap: clamp(2.5rem, 5vw, 4rem) clamp(1rem, 2vw, 2rem);
+  }
+  .pin {
+    display: grid;
+    gap: 1.25rem;
+    align-content: start;
+    color: inherit;
+    text-decoration: none;
+  }
+  .pin :global(.drawing-fig) {
+    padding: clamp(1rem, 2.5vw, 2rem);
+    border: 1px solid var(--line-faint);
+    background: oklch(0.3 0.098 240.5 / 0.55);
+    transition: border-color 0.3s var(--ease-out);
+  }
+  .pin:hover :global(.drawing-fig) {
+    border-color: var(--line-soft);
+  }
+  .pin-meta {
+    color: var(--accent);
+  }
+  .pin h3 {
+    margin-top: 0.5rem;
+    font-size: var(--step-2);
+    font-stretch: 112%;
+    font-weight: 740;
+  }
+  .pin-lead h3 {
+    font-size: var(--step-3);
+  }
+  .pin-sum {
+    margin-top: 0.6rem;
+    max-width: 44ch;
+    color: var(--text-2);
+  }
+  .pin:hover h3 {
+    text-decoration: underline;
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 0.14em;
+  }
+  @media (min-width: 900px) {
+    .pinup {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+    }
+    .pin-lead {
+      grid-column: 1 / -1;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      column-gap: clamp(1rem, 2vw, 2rem);
+      align-items: end;
+    }
+    .pin-lead :global(.drawing-fig) {
+      grid-column: 1 / 9;
+    }
+    .pin-lead .pin-text {
+      grid-column: 9 / 13;
+    }
+    .pin:not(.pin-lead):nth-of-type(2) {
+      grid-column: 1 / 8;
+    }
+    .pin:not(.pin-lead):nth-of-type(3) {
+      grid-column: 8 / 13;
+      margin-top: clamp(3rem, 8vw, 7rem);
+    }
+  }
+
+  /* --- about strip --- */
+  .about-strip {
+    margin-top: clamp(6rem, 12vw, 10rem);
+  }
+  .about-grid {
+    display: grid;
+    gap: 2.5rem;
+  }
+  .about-quote {
+    font-size: var(--step-3);
+    font-weight: 620;
+    font-stretch: 100%;
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+    max-width: 24ch;
+    text-wrap: pretty;
+  }
+  .about-blurb {
+    margin-top: 1.25rem;
+    color: var(--text-2);
+    max-width: 40ch;
+  }
+  .about-side .link-arrow {
+    margin-top: 0.5rem;
+  }
+  @media (min-width: 1000px) {
+    .about-grid {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      column-gap: clamp(1rem, 2vw, 2rem);
+      align-items: start;
+    }
+    .about-quote {
+      grid-column: 1 / 8;
+    }
+    .about-side {
+      grid-column: 9 / 13;
+      margin-top: 0.75rem;
+    }
+  }
+</style>

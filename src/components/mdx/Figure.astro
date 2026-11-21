@@ -1,0 +1,22 @@
+---
+/* Photograph inside an essay. `wide` lets it run into the margin column. */
+import Cyanotype from '../Cyanotype.astro';
+
+interface Props {
+  id: string;
+  alt: string;
+  caption?: string;
+  credit?: string;
+  creditUrl?: string;
+  ratio?: number;
+  position?: string;
+  wide?: boolean;
+}
+const { wide = false, ratio = 3 / 2, ...rest } = Astro.props;
+---
+<Cyanotype
+  {...rest}
+  ratio={ratio}
+  class={wide ? 'prose-fig wide' : 'prose-fig'}
+  sizes={wide ? '(min-width: 1240px) 62rem, 100vw' : '(min-width: 760px) 44rem, 100vw'}
+/>

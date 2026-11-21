@@ -1,0 +1,60 @@
+---
+import '@fontsource-variable/archivo/standard.css';
+import '@fontsource-variable/literata/standard.css';
+import '@fontsource-variable/literata/standard-italic.css';
+import '@fontsource-variable/martian-mono/standard.css';
+import '../styles/global.css';
+import archivoLatin from '@fontsource-variable/archivo/files/archivo-latin-standard-normal.woff2?url';
+import Frame from '../components/Frame.astro';
+import Header from '../components/Header.astro';
+import TitleBlock from '../components/TitleBlock.astro';
+import { site } from '../site.config';
+
+interface Props {
+  title?: string;
+  description?: string;
+  print?: 'blueprint' | 'whiteprint';
+  current?: 'home' | 'essays' | 'projects' | 'about';
+  sheet: { no: string; name: string };
+  image?: string;
+}
+const { title, description = site.description, print = 'blueprint', current, sheet, image } = Astro.props;
+const fullTitle = title ? `${title} · ${site.name}` : `${site.name} · ${site.tagline}`;
+const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site) : undefined;
+---
+<!doctype html>
+<html lang="en" data-print={print}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    {canonical && <link rel="canonical" href={canonical} />}
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preload" href={archivoLatin} as="font" type="font/woff2" crossorigin />
+    <link rel="preconnect" href="https://images.unsplash.com" />
+    <meta name="theme-color" content={print === 'blueprint' ? '#173f73' : '#f9fbfd'} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    {canonical && <meta property="og:url" content={canonical} />}
+    {image && <meta property="og:image" content={image} />}
+    <meta name="twitter:card" content="summary_large_image" />
+    <script is:inline>document.documentElement.classList.add('js');</script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <Frame />
+    <Header current={current} sheet={sheet} />
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+    <TitleBlock sheet={sheet} />
+  </body>
+</html>
+
+<style is:global>
+  main:focus {
+    outline: none;
+  }
+</style>

@@ -1,0 +1,226 @@
+---
+/*
+  When the buildings were made. The axis uses an architectural break line to skip
+  the centuries no essay covers yet, so 1163 and 1986 can share one sheet.
+*/
+import type { Essay } from '../lib/content';
+
+interface Props {
+  essays: Essay[];
+}
+const { essays } = Astro.props;
+
+const SEG1 = { from: 1150, to: 1600, start: 0, end: 26 }; // % of width
+const SEG2 = { from: 1920, to: 1995, start: 34, end: 100 };
+const pos = (year: number) => {
+  const s = year <= SEG1.to ? SEG1 : SEG2;
+  return s.start + ((year - s.from) / (s.to - s.from)) * (s.end - s.start);
+};
+const items = [...essays]
+  .sort((a, b) => a.data.building.year - b.data.building.year)
+  .map((e, i) => {
+    const x = pos(e.data.building.year);
+    // four label tiers (up-near, down-near, up-far, down-far) keep neighbours from colliding
+    const tier = ['up near', 'down near', 'up far', 'down far'][i % 4];
+    return { e, x, tier, flip: x > 75 };
+  });
+const ticks1 = [1200, 1300, 1400, 1500];
+const ticks2 = [1930, 1940, 1950, 1960, 1970, 1980, 1990];
+---
+<div class="timeline-scroll" role="region" aria-label="Timeline of buildings" tabindex="0">
+  <div class="tl-inner">
+  <div class="axis" aria-hidden="true">
+      <span class="seg" style={`left:${SEG1.start}%;right:${100 - SEG1.end}%`}></span>
+      <svg class="break" style={`left:${SEG1.end}%;width:${SEG2.start - SEG1.end}%`} viewBox="0 0 80 40" preserveAspectRatio="none">
+        <path d="M0 20 H30 L36 6 L44 34 L50 20 H80" vector-effect="non-scaling-stroke"></path>
+      </svg>
+      <span class="seg" style={`left:${SEG2.start}%;right:0`}></span>
+      {[...ticks1, ...ticks2].map((y) => <span class="tick tech" style={`--x:${pos(y).toFixed(2)}%`}>{y}</span>)}
+    </div>
+  <ol class="timeline" role="list">
+      {
+        items.map(({ e, x, tier, flip }) => (
+          <li class:list={['t-item', tier, { flip }]} style={`--x:${x.toFixed(2)}%`} data-style={e.data.style}>
+            <a href={`/essays/${e.id}/`}>
+              <span class="t-year tech">{e.data.building.year}</span>
+              <span class="t-name">{e.data.building.name.split(' (')[0]}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</div>
+<p class="tl-hint tech" aria-hidden="true">Swipe along the timeline <span>→</span></p>
+
+<style>
+  .timeline-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    padding-bottom: 0.5rem;
+  }
+  .tl-hint {
+    margin-top: 0.25rem;
+    color: var(--text-3);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  @media (min-width: 1040px) {
+    .tl-hint {
+      display: none;
+    }
+  }
+  .timeline-scroll:focus-visible {
+    outline-offset: 6px;
+  }
+  .tl-inner {
+    position: relative;
+    min-width: 960px;
+    height: 22.5rem;
+    margin-inline: 2rem;
+  }
+  .timeline {
+    --near: 2.6rem;
+    --far: 6.4rem;
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .axis {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 0;
+    pointer-events: none;
+  }
+  .seg {
+    position: absolute;
+    top: 0;
+    height: 1px;
+    background: var(--line);
+  }
+  .break {
+    position: absolute;
+    top: -20px;
+    height: 40px;
+    overflow: visible;
+  }
+  .break path {
+    fill: none;
+    stroke: var(--line);
+    stroke-width: 1.2;
+  }
+  .tick {
+    position: absolute;
+    left: var(--x);
+    top: 0;
+    padding-top: 0.6rem;
+    color: var(--text-3);
+    transform: translateX(-50%);
+    font-size: 10px;
+  }
+  .tick::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: -4px;
+    height: 8px;
+    width: 1px;
+    background: var(--line-soft);
+  }
+  .t-item {
+    --lead: var(--near);
+    position: absolute;
+    left: var(--x);
+    top: 50%;
+    width: 0;
+    height: 0;
+    transition: opacity 0.3s var(--ease-out);
+  }
+  .t-item.far {
+    --lead: var(--far);
+  }
+  .t-item.down {
+    --lead-down: calc(var(--lead) + 1.6rem);
+  }
+  /* leader line from the axis to the label */
+  .t-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    width: 1px;
+    background: var(--line-soft);
+  }
+  .t-item.up::before {
+    bottom: 0;
+    height: var(--lead);
+  }
+  .t-item.down::before {
+    top: 0;
+    height: var(--lead-down);
+  }
+  /* the dot sits on the axis */
+  .t-item::after {
+    content: '';
+    position: absolute;
+    left: -5px;
+    top: -5px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 1.5px solid var(--line);
+    transition:
+      background-color 0.2s var(--ease-out),
+      transform 0.3s var(--ease-expo);
+  }
+  .t-item a {
+    position: absolute;
+    left: -0.5rem;
+    display: flex;
+    flex-direction: column;
+    width: 8.25rem;
+    min-height: 44px;
+    padding: 0.35rem 0.5rem;
+    color: var(--text);
+    text-decoration: none;
+    line-height: 1.2;
+  }
+  .t-item.flip a {
+    left: auto;
+    right: -0.5rem;
+    align-items: flex-end;
+    text-align: right;
+  }
+  .t-item.up a {
+    bottom: calc(var(--lead) - 0.25rem);
+  }
+  .t-item.down a {
+    top: calc(var(--lead-down) - 0.25rem);
+  }
+  .t-year {
+    color: var(--accent);
+  }
+  .t-name {
+    margin-top: 0.15rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    font-stretch: 104%;
+  }
+  .t-item a:hover .t-name {
+    text-decoration: underline;
+    text-underline-offset: 0.16em;
+  }
+  .t-item:has(a:hover, a:focus-visible)::after {
+    background: var(--accent);
+    transform: scale(1.35);
+  }
+  .t-item.dim {
+    opacity: 0.28;
+  }
+</style>

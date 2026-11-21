@@ -1,0 +1,184 @@
+---
+/*
+  Section A–A through the Reading Room at Bhati Gate.
+  Scale of the drawing: 1 unit = 1.5 cm, so ground (+0.00) at y=760 and mezzanine (+3.60) at y=520.
+*/
+interface Props {
+  mode?: 'live' | 'scroll' | 'static';
+  class?: string;
+  label?: string;
+}
+const { mode = 'static', class: cls, label = 'Section drawing of a reading room: two vaulted bays lit by skylights and reflectors, a mezzanine of bookshelves reached by a stair, people for scale and a tree outside.' } = Astro.props;
+const uid = Math.random().toString(36).slice(2, 8);
+const modeClass = mode === 'live' ? 'is-live' : mode === 'scroll' ? 'on-scroll' : '';
+
+/* Architectural scale figure, feet at (cx, fy), ~1.75 m tall */
+const figure = (cx: number, fy: number) =>
+  `M${cx - 11} ${fy - 90} C${cx - 13} ${fy - 70} ${cx - 12} ${fy - 60} ${cx - 10} ${fy - 50} L${cx - 7} ${fy} L${cx - 1} ${fy} L${cx} ${fy - 44} L${cx + 1} ${fy} L${cx + 7} ${fy} L${cx + 10} ${fy - 50} C${cx + 12} ${fy - 60} ${cx + 13} ${fy - 70} ${cx + 11} ${fy - 90} Z`;
+
+/* Stair: 12 risers of 20 (300 mm) and goings of 26 */
+const stair = `M470 520 ${Array.from({ length: 12 }, () => 'h26 v20').join(' ')}`;
+
+/* Hand-loose tree canopy */
+const canopy = (() => {
+  const cx = 1212, cy = 590, pts: string[] = [];
+  for (let i = 0; i <= 36; i++) {
+    const a = (i / 36) * Math.PI * 2;
+    const r = 70 + Math.sin(a * 5) * 6 + Math.cos(a * 3) * 4;
+    pts.push(`${(cx + Math.cos(a) * r).toFixed(1)} ${(cy + Math.sin(a) * r * 0.92).toFixed(1)}`);
+  }
+  return `M${pts.join(' L')} Z`;
+})();
+
+const levels: [number, string, number][] = [
+  [760, '±0.00', 188],
+  [520, '+3.60', 188],
+  [300, '+6.90', 188],
+  [140, '+9.30', 410],
+];
+const axes: [number, string][] = [
+  [200, 'A'],
+  [650, 'B'],
+  [1100, 'C'],
+];
+const shelves = (top: number, bottom: number) =>
+  Array.from({ length: Math.floor((bottom - top) / 30) }, (_, i) => `M212 ${top + 30 * (i + 1)} H238`).join(' ');
+---
+<svg
+  class:list={['drawing', modeClass, cls]}
+  viewBox="0 0 1320 920"
+  role="img"
+  aria-label={label}
+  preserveAspectRatio="xMidYMid meet"
+>
+  <defs>
+    <pattern id={`earth-${uid}`} width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="12" stroke="currentColor" stroke-width="1" opacity="0.45"></line>
+    </pattern>
+  </defs>
+
+  <!-- structural grid -->
+  <g class="fade" style="--d:0.05s">
+    {
+      axes.map(([x, l]) => (
+        <>
+          <line class="ln axis" x1={x} y1="76" x2={x} y2="905" />
+          <circle class="ln" cx={x} cy="50" r="24" />
+          <text class="bubble-txt" x={x} y="51">{l}</text>
+        </>
+      ))
+    }
+  </g>
+
+  <!-- ground and earth -->
+  <path class="ln cut draw" pathLength="1" d="M40 760 H1290" style="--d:0.2s;--dur:1.1s" />
+  <rect class="fade" x="40" y="762" width="1250" height="40" fill={`url(#earth-${uid})`} style="--d:1.2s" />
+  <g class="poche fade" style="--d:0.9s">
+    <rect x="170" y="760" width="60" height="44" />
+    <rect x="1070" y="760" width="60" height="44" />
+    <rect x="636" y="760" width="28" height="36" />
+  </g>
+
+  <!-- cut walls (poché) with a window in the east wall -->
+  <g class="poche fade" style="--d:0.85s">
+    <rect x="188" y="300" width="24" height="460" />
+    <rect x="1088" y="300" width="24" height="262" />
+    <rect x="1088" y="682" width="24" height="78" />
+  </g>
+  <path class="ln thin draw" pathLength="1" d="M1097 562 V682 M1103 562 V682 M1080 682 H1120" style="--d:1.3s" />
+
+  <!-- column on grid B, seen beyond -->
+  <path class="ln draw" pathLength="1" d="M642 318 V760 M658 318 V760" style="--d:0.6s;--dur:1s" />
+
+  <!-- edge beam -->
+  <path class="ln draw" pathLength="1" d="M188 300 H1112" style="--d:0.75s" />
+  <path class="ln thin draw" pathLength="1" d="M212 318 H642 M658 318 H1088" style="--d:0.95s" />
+
+  <!-- vaults: cut shells with skylight slots at the crown -->
+  <path class="ln cut draw" pathLength="1" d="M212 300 C212 196 316 144 416 140" style="--d:0.85s;--dur:1.5s" />
+  <path class="ln cut draw" pathLength="1" d="M650 300 C650 196 546 144 446 140" style="--d:0.85s;--dur:1.5s" />
+  <path class="ln cut draw" pathLength="1" d="M650 300 C650 196 754 144 854 140" style="--d:1s;--dur:1.5s" />
+  <path class="ln cut draw" pathLength="1" d="M1088 300 C1088 196 984 144 884 140" style="--d:1s;--dur:1.5s" />
+  <path
+    class="ln thin draw"
+    pathLength="1"
+    d="M228 300 C228 206 322 158 416 154 M634 300 C634 206 540 158 446 154 M666 300 C666 206 760 158 854 154 M1072 300 C1072 206 978 158 884 154"
+    style="--d:1.2s;--dur:1.5s"
+  />
+  <!-- skylight curbs and glazing -->
+  <path class="ln draw" pathLength="1" d="M416 154 V126 H446 V154 M854 154 V126 H884 V154" style="--d:1.6s;--dur:0.8s" />
+  <path class="ln thin draw" pathLength="1" d="M416 132 H446 M854 132 H884" style="--d:1.9s;--dur:0.5s" />
+  <!-- perforated reflectors under the slots -->
+  <path class="ln draw dashy" pathLength="1" d="M381 198 Q431 224 481 198 M819 198 Q869 224 919 198" style="--d:1.75s;--dur:0.9s" />
+
+  <!-- mezzanine slab (cut), rail, stair -->
+  <rect class="poche fade" x="212" y="520" width="258" height="16" style="--d:1.15s" />
+  <path class="ln thin draw" pathLength="1" d="M212 452 H466 V520 M254 452 V520 M296 452 V520 M338 452 V520 M380 452 V520 M422 452 V520" style="--d:1.5s" />
+  <path class="ln draw" pathLength="1" d={stair} style="--d:1.3s;--dur:1.3s" />
+  <path class="ln thin draw" pathLength="1" d="M470 538 L764 760" style="--d:1.6s" />
+
+  <!-- bookshelves against the west wall, both levels -->
+  <path class="ln thin draw" pathLength="1" d={`M238 560 V760 ${shelves(560, 760)} M238 330 V520 ${shelves(330, 520)}`} style="--d:1.55s;--dur:1.2s" />
+
+  <!-- reading table -->
+  <path class="ln draw" pathLength="1" d="M846 708 H1000 M858 708 V760 M988 708 V760" style="--d:1.75s;--dur:0.8s" />
+
+  <!-- people for scale -->
+  <g style="--d:2s;--dur:1.1s">
+    <path class="ln draw" pathLength="1" d={figure(808, 760)} />
+    <circle class="ln draw" pathLength="1" cx="808" cy="656" r="8" />
+    <path class="ln draw" pathLength="1" d={figure(330, 520)} />
+    <circle class="ln draw" pathLength="1" cx="330" cy="416" r="8" />
+    <path class="ln draw" pathLength="1" d={figure(560, 760)} />
+    <circle class="ln draw" pathLength="1" cx="560" cy="656" r="8" />
+  </g>
+
+  <!-- tree outside -->
+  <g style="--d:2.05s;--dur:1.4s">
+    <path class="ln thin draw" pathLength="1" d={canopy} />
+    <path class="ln draw" pathLength="1" d="M1212 760 V626 M1212 690 L1184 652 M1212 668 L1240 632" />
+  </g>
+
+  <!-- levels -->
+  <g class="fade" style="--d:2.2s">
+    {
+      levels.map(([y, l, to]) => (
+        <>
+          <path class="ln thin" d={`M56 ${y} H${to}`} stroke-dasharray="6 5" />
+          <path class="ln" d={`M92 ${y - 15} H114 L103 ${y} Z`} />
+          <text class="label" x="56" y={y - 22}>{l}</text>
+        </>
+      ))
+    }
+  </g>
+
+  <!-- dimension strings -->
+  <g style="--d:2.3s;--dur:1s">
+    <path class="ln thin draw" pathLength="1" d="M200 812 V900 M650 812 V860 M1100 812 V900" />
+    <path class="ln draw" pathLength="1" d="M186 848 H1114 M193 855 L207 841 M643 855 L657 841 M1093 855 L1107 841" />
+    <path class="ln draw" pathLength="1" d="M186 888 H1114 M193 895 L207 881 M1093 895 L1107 881" />
+  </g>
+  <g class="fade" style="--d:2.6s">
+    <text class="label" x="425" y="838" text-anchor="middle">6750</text>
+    <text class="label" x="875" y="838" text-anchor="middle">6750</text>
+    <text class="label" x="650" y="878" text-anchor="middle">13 500</text>
+  </g>
+
+  <!-- daylight: through the slot, off the reflector, down the vault -->
+  <g style="--d:2.7s">
+    <path class="light" d="M398 18 L424 198 M431 8 L431 208 M464 18 L438 198" />
+    <path class="light" d="M424 204 L318 170 M438 204 L546 170 M318 176 L338 512 M546 176 L590 752" />
+    <path class="light" d="M836 18 L862 198 M869 8 L869 208 M902 18 L876 198" />
+    <path class="light" d="M862 204 L756 170 M876 204 L984 170 M756 176 L770 752 M984 176 L960 704" />
+  </g>
+</svg>
+
+<style>
+  .dashy {
+    stroke-dasharray: 2 4;
+  }
+  .drawing.is-live .dashy,
+  .drawing.on-scroll .dashy {
+    stroke-dasharray: 1;
+  }
+</style>

@@ -1,0 +1,117 @@
+---
+/*
+  A redline margin note. On wide screens it sits in the margin like a correction in red pencil;
+  on narrow screens the revision triangle toggles it open inline. Without JS it is always shown.
+  Usage in MDX:  ...text.<Note n={1}>The note.</Note>
+*/
+interface Props {
+  n: number;
+}
+const { n } = Astro.props;
+const id = `note-${n}`;
+---
+<span class="note"><button class="note-mark" type="button" aria-expanded="true" aria-controls={id} data-note><svg viewBox="0 0 24 21" aria-hidden="true"><path d="M12 1.6 22.4 19.4H1.6Z"></path></svg><span class="note-n" aria-hidden="true">{n}</span><span class="visually-hidden">Margin note {n}</span></button><span class="note-body" id={id} role="note"><span class="note-label tech">Note {n}</span> <slot /></span></span>
+
+<script>
+  const narrow = matchMedia('(max-width: 1239px)');
+  const sync = () => {
+    document.querySelectorAll<HTMLButtonElement>('[data-note]').forEach((btn) => {
+      const body = document.getElementById(btn.getAttribute('aria-controls') || '');
+      if (!body) return;
+      const open = !narrow.matches || btn.dataset.open === '1';
+      btn.setAttribute('aria-expanded', String(open));
+      body.classList.toggle('is-collapsed', !open);
+    });
+  };
+  document.querySelectorAll<HTMLButtonElement>('[data-note]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (!narrow.matches) {
+        const body = document.getElementById(btn.getAttribute('aria-controls') || '');
+        body?.animate?.([{ backgroundColor: 'color-mix(in oklch, currentColor 12%, transparent)' }, { backgroundColor: 'transparent' }], { duration: 900, easing: 'ease-out' });
+        return;
+      }
+      btn.dataset.open = btn.dataset.open === '1' ? '0' : '1';
+      sync();
+    });
+  });
+  narrow.addEventListener('change', sync);
+  sync();
+</script>
+
+<style>
+  .note-mark {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    width: 1.6em;
+    height: 1.4em;
+    margin: 0 0.1em 0 0.2em;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--mark);
+    font: inherit;
+    vertical-align: 0.15em;
+    cursor: pointer;
+  }
+  /* bigger touch target without affecting the line box */
+  .note-mark::before {
+    content: '';
+    position: absolute;
+    inset: -12px -10px;
+  }
+  .note-mark svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linejoin: round;
+  }
+  .note-n {
+    position: relative;
+    top: 0.18em;
+    font-family: var(--font-tech);
+    font-size: 0.55em;
+    font-weight: 600;
+    line-height: 1;
+  }
+  .note-body {
+    display: block;
+    margin: 0.85rem 0 1.1rem;
+    padding: 0.85rem 1rem 0.95rem;
+    border: 1px solid color-mix(in oklch, var(--mark) 55%, transparent);
+    font-family: var(--font-display);
+    font-size: 0.9rem;
+    font-style: normal;
+    line-height: 1.5;
+    color: var(--text-2);
+  }
+  .note-body.is-collapsed {
+    display: none;
+  }
+  .note-label {
+    display: block;
+    margin-bottom: 0.3rem;
+    color: var(--mark);
+  }
+  @media (min-width: 1240px) {
+    .note-mark {
+      cursor: default;
+    }
+    .note-body,
+    .note-body.is-collapsed {
+      display: block;
+      float: right;
+      clear: right;
+      width: 15.5rem;
+      margin: 0.35rem calc(-15.5rem - 3.25rem) 1rem 0;
+      padding: 0.6rem 0 0;
+      border: 0;
+      border-top: 1px solid var(--mark);
+      font-size: 0.86rem;
+    }
+  }
+</style>
